@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import LeadForm from './components/LeadForm';
 import LoadingSpinner from './components/LoadingSpinner';
 import { translations, Translation } from './i18n';
+import { SpeedInsights } from "@vercel/speed-insights/react"
 
 const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -11,7 +12,7 @@ const App: React.FC = () => {
     const setLanguageFromBrowser = () => {
       try {
         const userLang = navigator.language.split('-')[0]; // 'pt-BR' -> 'pt'
-        
+
         if (userLang === 'en') {
           setTexts(translations.en);
         } else {
@@ -36,5 +37,6 @@ const App: React.FC = () => {
     </main>
   );
 };
+<SpeedInsights />
 
 export default App;

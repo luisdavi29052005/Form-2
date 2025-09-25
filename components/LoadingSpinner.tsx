@@ -1,4 +1,5 @@
 import React from 'react';
+import { SpeedInsights } from "@vercel/speed-insights/react"
 
 const LoadingSpinner: React.FC = () => {
   return (
@@ -11,5 +12,6 @@ const LoadingSpinner: React.FC = () => {
     </div>
   );
 };
+<SpeedInsights />
 
 export default LoadingSpinner;

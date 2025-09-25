@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import type { Lead } from '../types';
 import { saveLead } from '../services/supabase';
 import { Translation } from '../i18n';
+import { SpeedInsights } from "@vercel/speed-insights/react"
 
 interface LeadFormProps {
   texts: Translation;
@@ -23,7 +24,7 @@ const FacebookLeadForm: React.FC<LeadFormProps> = ({ texts }) => {
       nameInputRef.current?.focus();
     }
   }, [step]);
-  
+
   const validateStep1 = () => {
     const newErrors: { name?: string; email?: string } = {};
     if (!name.trim()) {
@@ -52,7 +53,7 @@ const FacebookLeadForm: React.FC<LeadFormProps> = ({ texts }) => {
       setStep(step - 1);
     }
   };
-  
+
   const handleReset = () => {
     setStep(1);
     setName('');
@@ -61,24 +62,36 @@ const FacebookLeadForm: React.FC<LeadFormProps> = ({ texts }) => {
     setLoading(false);
   };
 
+  // ... (imports e início do componente)
+
   const handleSubmit = async () => {
     setLoading(true);
     setErrors({});
     try {
-      const leadData: Lead = { name, email };
+      // 1. Obter o IP do usuário primeiro
+      const ipResponse = await fetch('https://api.ipify.org?format=json');
+      if (!ipResponse.ok) {
+        throw new Error('Could not fetch IP address.');
+      }
+      const ipData = await ipResponse.json();
+      const userIp = ipData.ip;
+
+      // 2. Chamar saveLead com os dados do formulário + IP
+      const leadData: Lead = { name, email, ip_address: userIp };
       await saveLead(leadData);
+
       setAnimationDirection('right');
       setStep(3); // Go to success step
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err);
-      
+
       if (errorMessage.includes('duplicate key value')) {
         setErrors({ api: texts.errorEmailDuplicate });
       } else {
-        console.error('Supabase submission error:', errorMessage); // For debugging
+        console.error('Submission error:', errorMessage); // For debugging
         setErrors({ api: `${texts.errorSubmit}. ${texts.errorTryAgain}` });
       }
-      
+
       setStep(2); // Stay on step 2 to show the error
     } finally {
       setLoading(false);
@@ -110,7 +123,7 @@ const FacebookLeadForm: React.FC<LeadFormProps> = ({ texts }) => {
                   aria-invalid={!!errors.name}
                   className={`w-full bg-gray-100 rounded-md px-3 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow ${errors.name ? 'ring-2 ring-red-500' : ''}`}
                 />
-                 {errors.name && <p className="text-red-600 text-xs mt-1" aria-live="polite">{errors.name}</p>}
+                {errors.name && <p className="text-red-600 text-xs mt-1" aria-live="polite">{errors.name}</p>}
               </div>
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">{texts.emailLabel}</label>
@@ -123,7 +136,7 @@ const FacebookLeadForm: React.FC<LeadFormProps> = ({ texts }) => {
                   aria-invalid={!!errors.email}
                   className={`w-full bg-gray-100 rounded-md px-3 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow ${errors.email ? 'ring-2 ring-red-500' : ''}`}
                 />
-                 {errors.email && <p className="text-red-600 text-xs mt-1" aria-live="polite">{errors.email}</p>}
+                {errors.email && <p className="text-red-600 text-xs mt-1" aria-live="polite">{errors.email}</p>}
               </div>
             </div>
           </>
@@ -157,7 +170,7 @@ const FacebookLeadForm: React.FC<LeadFormProps> = ({ texts }) => {
   };
 
   const renderFooter = () => {
-    switch(step) {
+    switch (step) {
       case 1:
         return <button onClick={handleNextStep} className="w-full bg-blue-600 text-white font-bold py-2.5 px-4 rounded-lg hover:bg-blue-700 transition-all shadow-sm">{texts.continueButton}</button>;
       case 2:
@@ -181,14 +194,14 @@ const FacebookLeadForm: React.FC<LeadFormProps> = ({ texts }) => {
     <div className="w-full max-w-md bg-white rounded-xl shadow-2xl overflow-hidden relative flex flex-col">
       <div className="p-4 border-b bg-gray-50 flex justify-between items-center">
         <div className="flex items-center">
-            {step > 1 && (
-              <button onClick={handlePrevStep} className="text-gray-500 hover:text-gray-800 p-1 rounded-full hover:bg-gray-200 mr-2">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-            )}
-            <span className="text-xs text-gray-600 font-medium">{step === 1 ? texts.headerStep1 : step === 2 ? texts.headerStep2 : texts.headerStep3}</span>
+          {step > 1 && (
+            <button onClick={handlePrevStep} className="text-gray-500 hover:text-gray-800 p-1 rounded-full hover:bg-gray-200 mr-2">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+          )}
+          <span className="text-xs text-gray-600 font-medium">{step === 1 ? texts.headerStep1 : step === 2 ? texts.headerStep2 : texts.headerStep3}</span>
         </div>
         <button onClick={handleReset} className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-200">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -202,24 +215,25 @@ const FacebookLeadForm: React.FC<LeadFormProps> = ({ texts }) => {
           {renderStepContent()}
         </div>
       </div>
-      
+
       <div className="bg-gray-50 px-6 py-4 border-t">
         {renderFooter()}
       </div>
-      
-       <div className="bg-gray-100 px-6 py-2 flex justify-end items-center text-xs text-gray-600 border-t">
+
+      <div className="bg-gray-100 px-6 py-2 flex justify-end items-center text-xs text-gray-600 border-t">
         <div className="flex items-center space-x-2">
           <span>{texts.stepCounter(step, 3)}</span>
           <button onClick={handlePrevStep} disabled={step === 1} className="p-1 rounded-full hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
           </button>
           <button onClick={handleNextStep} disabled={step >= 2} className="p-1 rounded-full hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed">
-             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
           </button>
         </div>
       </div>
     </div>
   );
 };
+<SpeedInsights />
 
 export default FacebookLeadForm;
