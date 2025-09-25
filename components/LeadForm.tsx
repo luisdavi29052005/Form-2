@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import type { Lead } from '../types';
-import { saveLead } from '../services/supabase';
+import { saveLead, getIPAddress } from '../services/supabase';
 import { Translation } from '../i18n';
 import { SpeedInsights } from "@vercel/speed-insights/react"
 
@@ -69,12 +69,7 @@ const FacebookLeadForm: React.FC<LeadFormProps> = ({ texts }) => {
     setErrors({});
     try {
       // 1. Obter o IP do usuário primeiro
-      const ipResponse = await fetch('https://api.ipify.org?format=json');
-      if (!ipResponse.ok) {
-        throw new Error('Could not fetch IP address.');
-      }
-      const ipData = await ipResponse.json();
-      const userIp = ipData.ip;
+      const userIp = await getIPAddress();
 
       // 2. Chamar saveLead com os dados do formulário + IP
       const leadData: Lead = { name, email, ip_address: userIp };

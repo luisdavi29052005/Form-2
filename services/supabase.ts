@@ -9,11 +9,25 @@ const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 /**
+ * Busca o endereço IP do usuário.
+ * @returns O endereço IP do usuário ou lança um erro.
+ */
+export const getIPAddress = async (): Promise<string> => {
+  const ipResponse = await fetch('https://api.ipify.org?format=json');
+  if (!ipResponse.ok) {
+    throw new Error('Could not fetch IP address.');
+  }
+  const ipData = await ipResponse.json();
+  return ipData.ip;
+};
+
+
+/**
  * Busca a geolocalização de um endereço IP.
  * @param ip - O endereço IP do usuário.
  * @returns Um objeto com os dados de geolocalização ou null em caso de erro.
  */
-const getGeolocation = async (ip: string) => {
+export const getGeolocation = async (ip: string) => {
   try {
     // Usamos 'no-cors' para evitar problemas de CORS em ambiente de desenvolvimento.
     // Para produção, o ideal é fazer essa chamada a partir de uma Edge Function no Supabase.
@@ -25,6 +39,7 @@ const getGeolocation = async (ip: string) => {
     if (data.status === 'success') {
       return {
         country: data.country,
+        countryCode: data.countryCode, // Adicionando o countryCode
         region: data.regionName,
         city: data.city,
       };

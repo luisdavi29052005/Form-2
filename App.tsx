@@ -6,29 +6,23 @@ import { SpeedInsights } from "@vercel/speed-insights/react"
 
 const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
-  const [texts, setTexts] = useState<Translation>(translations.pt); // Default to Portuguese
+  const [texts, setTexts] = useState<Translation>(translations.en); // Default to English
 
   useEffect(() => {
-    const setLanguageFromBrowser = () => {
+    const setLanguage = () => {
       try {
-        const userLang = navigator.language.split('-')[0]; // 'pt-BR' -> 'pt'
-
-        if (userLang === 'en') {
-          setTexts(translations.en);
-        } else {
-          // Default to Portuguese for 'pt' and any other language
-          setTexts(translations.pt);
-        }
+        // Define o idioma diretamente como inglês
+        setTexts(translations.en);
       } catch (error) {
-        console.error("Could not detect browser language, defaulting to Portuguese.", error);
-        setTexts(translations.pt); // Fallback to default language on error
+        console.error("Could not set default language, defaulting to English.", error);
+        setTexts(translations.en); // Fallback para inglês em caso de erro
       } finally {
-        // Add a small delay to ensure loading feels smooth
+        // Adiciona um pequeno atraso para garantir que o carregamento seja suave
         setTimeout(() => setLoading(false), 500);
       }
     };
 
-    setLanguageFromBrowser();
+    setLanguage();
   }, []);
 
   return (
